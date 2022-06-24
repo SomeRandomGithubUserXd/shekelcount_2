@@ -161,7 +161,7 @@ export default {
             this.$refs['importModal'].init()
         },
         redirectToMutators() {
-            alert('Work in progress')
+            Inertia.visit(route('mutators.index'))
         },
         redirectToSearch() {
             Inertia.visit(route('search.index', {
