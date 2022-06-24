@@ -21,10 +21,16 @@
                                             class="w-6 h-6 text-gray-600 hover:text-black transition cursor-pointer"/>
                             </tippy>
                         </div>
-                        <div>
+                        <div class="mr-3">
                             <tippy content="Import Entries">
                                 <UploadIcon @click="importEntries"
                                             class="w-6 h-6 text-gray-600 hover:text-black transition cursor-pointer"/>
+                            </tippy>
+                        </div>
+                        <div>
+                            <tippy content="Delete all categories">
+                                <TrashIcon @click="deleteAllCategories"
+                                           class="w-6 h-6 text-gray-600 hover:text-black transition cursor-pointer"/>
                             </tippy>
                         </div>
                     </div>
@@ -50,7 +56,9 @@
         <import-modal
             :import-options="$page.props.import.options"
             :import-extensions="$page.props.import.extensions"
+            :user-mutators="$page.props.mutators"
             ref="importModal"/>
+        <delete-all-categories-modal ref="deleteAllModal"/>
     </Authenticated>
 </template>
 
@@ -59,7 +67,7 @@ import "@fortawesome/fontawesome-free/css/all.css"
 import Authenticated from "@/Layouts/Authenticated";
 import {Tippy} from 'vue-tippy'
 import 'tippy.js/dist/tippy.css'
-import {FolderIcon, UploadIcon} from "@heroicons/vue/solid"
+import {FolderIcon, UploadIcon, TrashIcon} from "@heroicons/vue/solid"
 import CategoryModal from "@/Components/Entries/Category/CategoryModal";
 import CategoryBlock from "@/Components/Entries/Category/CategoryBlock";
 import {useForm} from "@inertiajs/inertia-vue3";
@@ -68,13 +76,22 @@ import ImportModal from "@/Components/Entries/ImportModal";
 import Pagination from "@/Components/Pagination";
 import {Inertia} from "@inertiajs/inertia";
 import {Head} from '@inertiajs/inertia-vue3';
+import DeleteAllCategoriesModal from "@/Components/Entries/Category/DeleteAllCategoriesModal";
 
 export default {
     components: {
+        DeleteAllCategoriesModal,
         Head,
         Pagination,
         ImportModal,
-        CategoryDeleteModal, CategoryBlock, CategoryModal, Authenticated, Tippy, FolderIcon, UploadIcon
+        CategoryDeleteModal,
+        CategoryBlock,
+        CategoryModal,
+        Authenticated,
+        Tippy,
+        FolderIcon,
+        UploadIcon,
+        TrashIcon,
     },
     methods: {
         createCategory() {
@@ -99,6 +116,9 @@ export default {
         },
         switchPage(page) {
             Inertia.visit(route('entries.index', {page}))
+        },
+        deleteAllCategories() {
+            this.$refs['deleteAllModal'].init()
         }
     }
 }

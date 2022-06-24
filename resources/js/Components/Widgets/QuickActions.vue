@@ -116,6 +116,7 @@
         <import-modal
             :import-options="$page.props.import.options"
             :import-extensions="$page.props.import.extensions"
+            :user-mutators="$page.props.mutators"
             ref="importModal"/>
     </div>
 </template>
@@ -125,7 +126,7 @@
 import {UploadIcon, PencilIcon, SwitchHorizontalIcon, SearchIcon} from "@heroicons/vue/outline";
 import ImportModal from "@/Components/Entries/ImportModal";
 import {Inertia} from "@inertiajs/inertia";
-import CategorySelect from "@/Components/Categories/CategorySelect";
+import CategorySelect from "@/Components/Entries/Category/CategorySelect";
 
 export default {
     props: {

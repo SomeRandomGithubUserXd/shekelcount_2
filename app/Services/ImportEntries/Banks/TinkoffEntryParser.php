@@ -17,7 +17,7 @@ class TinkoffEntryParser extends AbstractEntryParser
         return new EntryEntity(
             User::find($this->userId)->categories()->firstOrCreate([
                 'name' => $entry['Категория'] ?? "ДРУГИЕ ОПЕРАЦИИ"
-            ])->id,
+            ]),
             $this->strToTimezone($entry['Дата операции'], TimezoneConversionOption::MoscowToUTC),
             -$entry['Сумма платежа'],
             $entry['Описание']

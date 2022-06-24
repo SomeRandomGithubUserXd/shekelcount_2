@@ -10,14 +10,16 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
         $service = new DashboardService(auth()->id());
         return inertia()->render('User/Dashboard', [
-            'categories' => auth()->user()
+            'categories' => $user
                 ->categories()
                 ->orderBy('name')
                 ->get(),
             'charts' => $service->getCharts(),
-            'import' => AbstractEntryParser::getImportMeta()
+            'import' => AbstractEntryParser::getImportMeta(),
+            'mutators' => $user->mutators
         ]);
     }
 }

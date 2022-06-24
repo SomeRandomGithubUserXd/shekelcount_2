@@ -7,19 +7,20 @@ use App\Http\Requests\User\Entry\DeleteManyEntriesRequest;
 use App\Http\Requests\User\Entry\EntryRequest;
 use App\Http\Requests\User\Entry\ImportRequest;
 use App\Http\Requests\User\Entry\TransferEntriesRequest;
-use App\Http\Requests\User\Entry\UpdateEntryRequest;
-use App\Models\Category;
 use App\Models\Entry;
 use App\Models\Service\EntryImportBank;
-use App\Rules\EntryBelongsToUserRule;
 use App\Services\ImportEntries\AbstractEntryParser;
+use App\Traits\CRUDsEntries;
 use Illuminate\Http\Request;
 
 class EntryController extends Controller
 {
-    public function index(Request $request)
+    use CRUDsEntries;
+
+    public function index()
     {
-        $categories = auth()->user()
+        $user = auth()->user();
+        $categories = $user
             ->categories()
             ->addSelect([
                 'entries_sum' => Entry::query()
@@ -30,8 +31,9 @@ class EntryController extends Controller
             ->paginate(5);
         return inertia('User/Entries/Index', [
             'categories' => $categories,
-            'icons' => config('icons.v5'),
-            'import' => AbstractEntryParser::getImportMeta()
+            'icons' => config('icons.data'),
+            'import' => AbstractEntryParser::getImportMeta(),
+            'mutators' => $user->mutators
         ]);
     }
 
@@ -39,7 +41,12 @@ class EntryController extends Controller
     {
         $parserModel = EntryImportBank::find($request->get('schema_id'));
         /** @var AbstractEntryParser $parser */
-        $parser = new $parserModel->parser($request->file('file'), auth()->id(), $parserModel->id);
+        $parser = new $parserModel->parser(
+            $request->file('file'),
+            auth()->id(),
+            $parserModel->id,
+            $request->mutator_ids
+        );
         $parser->save();
         return redirect()->route('entries.index');
     }
@@ -50,36 +57,33 @@ class EntryController extends Controller
         return redirect()->back();
     }
 
-    public function update(UpdateEntryRequest $request)
+    public function update(EntryRequest $request, Entry $entry)
     {
-        $entry = Entry::find($request->get('entry_id'));
+        abort_unless($this->entryBelongsToUser(auth()->id(), $entry->id), 403);
         $entry->update($request->validated());
         return redirect()->back();
     }
 
-    public function delete(Entry $entry)
+    public function destroy(Entry $entry)
     {
-        $rule = new EntryBelongsToUserRule(auth()->id());
-        $passes = $rule->passes('entry_id', $entry->id);
-        abort_unless($passes, 403);
+        abort_unless($this->entryBelongsToUser(auth()->id(), $entry->id), 403);
         $entry->delete();
         return redirect()->back();
     }
 
     public function deleteMany(DeleteManyEntriesRequest $request)
     {
-        foreach ($request->get('entry_ids') as $entryId) {
-            Entry::find($entryId)->delete();
-        }
+        Entry::query()
+            ->whereIn('id', $request->get('entry_ids'))
+            ->delete();
         return redirect()->back();
     }
 
     public function transfer(TransferEntriesRequest $request)
     {
-        foreach ($request->get('entry_ids') as $entryId) {
-            Entry::find($entryId)
-                ->update(['category_id' => $request->get('category_id')]);
-        }
+        Entry::query()
+            ->whereIn('id', $request->get('entry_ids'))
+            ->update(['category_id' => $request->get('category_id')]);
         return redirect()->back();
     }
 

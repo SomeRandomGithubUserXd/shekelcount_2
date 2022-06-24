@@ -14,7 +14,7 @@ class CreateCategoriesTable extends Migration
             $table->foreignIdFor(User::class);
             $table->string('name');
             $table->string('color', 7)->default('#000000');
-            $table->enum('icon', config('icons.v5'))->nullable();
+            $table->string('icon')->nullable();
             $table->unique(['user_id', 'name']);
             $table->timestamps();
         });

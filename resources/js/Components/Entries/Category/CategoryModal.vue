@@ -28,7 +28,7 @@
                                     {{ !mode ? "Create" : "Edit" }} Category
                                 </DialogTitle>
                                 <div class="mt-5 flex flex-col">
-                                    <validation-errors class="mb-4" />
+                                    <validation-errors class="mb-4"/>
                                     <div>
                                         <label for="name">
                                             Name
@@ -46,10 +46,34 @@
                                         <label for="icon">
                                             Icon
                                         </label>
-                                        <v-select :options="$page.props.icons" v-model="form.icon">
+                                        <v-select @search="onIconSearch" :options="iconSelectPaginated"
+                                                  v-model="form.icon">
                                             <template v-slot:option="option">
                                                 <i :class="option.label"></i>
-                                                <span class="ml-2">{{ option.label }}</span>
+                                                <span class="ml-2 capitalize">{{ option.label.split("-").pop() }}</span>
+                                            </template>
+                                            <template v-slot:list-footer>
+                                                <div class="flex w-full justify-between items-center">
+                                                    <button type="button"
+                                                            class="w-1/4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                            :disabled="!iconSelectHasPrevPage"
+                                                            @click="iconSelect.offset -= iconSelect.limit">
+                                                        <ArrowSmLeftIcon class="-ml-1 mr-2 h-5 w-5"
+                                                                         aria-hidden="true"/>
+                                                        Prev
+                                                    </button>
+                                                    <span class="text-l text-gray-700">{{
+                                                            iconSelect.offset + iconSelectPaginated.length
+                                                        }}/{{ this.iconSelectFiltered.length }}</span>
+                                                    <button type="button"
+                                                            :disabled="!iconSelectHasNextPage"
+                                                            @click="iconSelect.offset += iconSelect.limit"
+                                                            class="inline-flex w-1/4 items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                        Next
+                                                        <ArrowSmRightIcon class="ml-1 mr-2 h-5 w-5"
+                                                                          aria-hidden="true"/>
+                                                    </button>
+                                                </div>
                                             </template>
                                         </v-select>
                                     </div>
@@ -77,7 +101,7 @@
 
 <script>
 import {Dialog, DialogOverlay, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
-import {PlusIcon} from '@heroicons/vue/outline'
+import {PlusIcon, ArrowSmLeftIcon, ArrowSmRightIcon} from '@heroicons/vue/outline'
 import Button from "@/Components/Button";
 import {useForm} from "@inertiajs/inertia-vue3";
 import Input from "@/Components/Input";
@@ -96,7 +120,9 @@ export default {
         TransitionChild,
         TransitionRoot,
         PlusIcon,
-        vSelect
+        vSelect,
+        ArrowSmLeftIcon,
+        ArrowSmRightIcon
     },
     data() {
         return {
@@ -107,8 +133,33 @@ export default {
                 name: "",
                 color: '#000000',
                 icon: null
-            })
+            }),
+            iconSelect: {
+                search: '',
+                offset: 0,
+                limit: 8,
+            }
         }
+    },
+    computed: {
+        iconSelectFiltered() {
+            return this.$page.props.icons.filter((icon) =>
+                icon.toLocaleLowerCase().includes(this.iconSelect.search.toLocaleLowerCase())
+            )
+        },
+        iconSelectPaginated() {
+            return this.iconSelectFiltered.slice(this.iconSelect.offset, this.iconSelect.limit + this.iconSelect.offset)
+        },
+        iconSelectHasNextPage() {
+            const nextOffset = this.iconSelect.offset + this.iconSelect.limit
+            return !!this.iconSelectFiltered.slice(nextOffset, this.iconSelect.limit + nextOffset).length
+
+        },
+        iconSelectHasPrevPage() {
+            const prevOffset = this.iconSelect.offset - this.iconSelect.limit
+            return !!this.iconSelectFiltered.slice(prevOffset, this.iconSelect.limit + prevOffset).length
+
+        },
     },
     methods: {
         handleForm() {
@@ -129,14 +180,27 @@ export default {
             })
         },
         update() {
-            this.form.patch(route('entries.categories.update'), {
+            this.form.patch(route('entries.categories.update', this.form.category_id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     this.open = false
                     this.form.reset()
                 }
             })
-        }
+        },
+        onIconSearch(query) {
+            this.iconSelect.search = query
+            this.iconSelect.offset = 0
+        },
     }
 }
 </script>
+
+<style>
+.vs__dropdown-menu {
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    padding: 0;
+}
+</style>

@@ -73,7 +73,7 @@ export default {
           this.entry_id = entry_id
         },
         deleteEntry() {
-            Inertia.delete(route('entries.delete', this.entry_id), {
+            Inertia.delete(route('entries.destroy', this.entry_id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     this.open = false

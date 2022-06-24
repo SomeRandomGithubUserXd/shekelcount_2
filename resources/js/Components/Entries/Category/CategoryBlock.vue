@@ -62,6 +62,7 @@ import {
 import CategoryModal from "@/Components/Entries/Category/CategoryModal";
 import CategoryDeleteModal from "@/Components/Entries/Category/CategoryDeleteModal";
 import {Inertia} from "@inertiajs/inertia";
+import {priceFormat} from "@/Traits/InteractsWithEntries";
 
 export default {
     components: {
@@ -82,9 +83,7 @@ export default {
         redirect() {
             Inertia.visit(route('entries.categories.show', this.category.id))
         },
-        priceFormat(number) {
-            return priceFormat(number);
-        },
+        priceFormat: priceFormat,
         editCategory() {
             this.$emit('editCategory', this.category)
         },

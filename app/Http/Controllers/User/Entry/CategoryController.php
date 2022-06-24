@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\Entry\Category\CategoryRequest;
 use App\Http\Requests\User\Entry\Category\UpdateCategoryRequest;
 use App\Models\Category;
+use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
@@ -29,20 +30,23 @@ class CategoryController extends Controller
         return redirect()->back();
     }
 
-    public function update(UpdateCategoryRequest $request)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $category = Category::find($request->get('category_id'));
         abort_if($category->user_id !== auth()->id(), 403);
-        $data = $request->validated();
-        unset($data['category_id']);
-        $category->update($data);
+        $category->update($request->validated());
         return redirect()->back();
     }
 
-    public function delete(Category $category)
+    public function destroy(Category $category)
     {
         abort_if($category->user_id !== auth()->id(), 403);
         $category->delete();
+        return redirect()->back();
+    }
+
+    public function destroyAll()
+    {
+        auth()->user()->categories()->delete();
         return redirect()->back();
     }
 }

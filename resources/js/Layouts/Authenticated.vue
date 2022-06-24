@@ -30,7 +30,8 @@
                                 <ApplicationLogo :size="40" :with-alt="true"/>
                             </div>
                             <nav class="mt-5 px-2 space-y-1">
-                                <Link v-for="item in navigation" :key="item.name" :href="item.href" :class="[item.current ? 'bg-indigo-800 text-white' : 'text-white hover:bg-indigo-600 hover:bg-opacity-75', 'group flex items-center px-2 py-2 text-base font-medium rounded-md']">
+                                <Link v-for="item in navigation" :key="item.name" :href="item.href"
+                                      :class="[item.current ? 'bg-indigo-800 text-white' : 'text-white hover:bg-indigo-600 hover:bg-opacity-75', 'group flex items-center px-2 py-2 text-base font-medium rounded-md']">
                                     <component :is="item.icon" class="mr-4 flex-shrink-0 h-6 w-6 text-indigo-300"
                                                aria-hidden="true"/>
                                     {{ item.name }}
@@ -66,7 +67,7 @@
                     </div>
                     <nav class="mt-5 flex-1 px-2 space-y-1">
                         <Link v-for="item in navigation" :key="item.name" :href="item.href"
-                           :class="[item.current ? 'bg-indigo-800 text-white' : 'text-white hover:bg-indigo-600 hover:bg-opacity-75', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                              :class="[item.current ? 'bg-indigo-800 text-white' : 'text-white hover:bg-indigo-600 hover:bg-opacity-75', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
                             <component :is="item.icon" class="mr-3 flex-shrink-0 h-6 w-6 text-indigo-300"
                                        aria-hidden="true"/>
                             {{ item.name }}
@@ -122,6 +123,7 @@ import {
     AnnotationIcon,
     SearchIcon,
     XIcon,
+    SwitchHorizontalIcon,
 } from '@heroicons/vue/outline'
 import ApplicationLogo from "@/Components/ApplicationLogo";
 import {Inertia} from "@inertiajs/inertia";
@@ -156,6 +158,12 @@ export default {
                     href: route('entries.index'),
                     icon: AnnotationIcon,
                     current: this.routeIsCurrent(route('entries.index'))
+                },
+                {
+                    name: 'Mutators',
+                    href: route('mutators.index'),
+                    icon: SwitchHorizontalIcon,
+                    current: this.routeIsCurrent(route('mutators.index'))
                 },
                 {
                     name: 'Search',

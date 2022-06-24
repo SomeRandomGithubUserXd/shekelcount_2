@@ -15,6 +15,7 @@ import {
     ArcElement,
     Title
 } from 'chart.js'
+import {isMobile} from "@/Traits/InteractsWithWindow";
 
 ChartJS.register(
     ArcElement,

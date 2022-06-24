@@ -83,6 +83,7 @@ import {
     TrashIcon
 } from "@heroicons/vue/solid";
 import 'tippy.js/dist/tippy.css'
+import {priceFormat} from "@/Traits/InteractsWithEntries";
 import {Tippy} from 'vue-tippy'
 import "@fortawesome/fontawesome-free/css/all.css"
 import {Inertia} from "@inertiajs/inertia";
@@ -107,9 +108,7 @@ export default {
         PencilAltIcon, TrashIcon, Tippy, CurrencyDollarIcon, ClockIcon, DocumentTextIcon, LibraryIcon
     },
     methods: {
-        priceFormat(number) {
-            return priceFormat(number);
-        },
+        priceFormat: priceFormat,
         editEntry() {
             this.$emit('editEntry', this.entry)
         },

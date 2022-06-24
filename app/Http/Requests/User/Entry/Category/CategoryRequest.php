@@ -12,7 +12,7 @@ class CategoryRequest extends FormRequest
         return [
             'name' => ['required', 'string', $this->getNameUniqueRule()],
             'color' => ['required', 'min:7', 'max:7'],
-            'icon' => ['required', Rule::in(config('icons.v5'))]
+            'icon' => ['required', Rule::in(config('icons.data'))]
         ];
     }
 

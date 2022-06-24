@@ -3,8 +3,10 @@
 namespace App\Services\ImportEntries;
 
 use App\Models\Entry;
+use App\Models\Mutator;
 use App\Models\Service\EntryImportBank;
 use App\Models\User;
+use App\Services\ImportEntries\Mutators\AbstractMutator;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\UploadedFile;
@@ -21,13 +23,16 @@ abstract class AbstractEntryParser
 
     protected int $parserId;
 
+    protected array $mutatorIds;
+
     /**
      * @throws Exception
      */
-    public function __construct(UploadedFile $file, int $userId, int $parserId)
+    public function __construct(UploadedFile $file, int $userId, int $parserId, array|null $mutatorIds)
     {
         $this->userId = $userId;
         $this->parserId = $parserId;
+        $this->mutatorIds = $mutatorIds ?? [];
         $this->setFile($file);
     }
 
@@ -72,18 +77,36 @@ abstract class AbstractEntryParser
 
     abstract protected function toEntryEntity(array $entry): EntryEntity;
 
+    public function getMutators(): array
+    {
+        $mutators = [];
+        foreach ($this->mutatorIds as $mutatorId) {
+            $mutators[] = Mutator::find($mutatorId);
+        }
+        return $mutators;
+    }
+
     public function save(): void
     {
-        User::find($this->userId)->entries()->update(['was_recently_imported' => 0]);
+        $mutators = $this->getMutators();
+        User::query()
+            ->find($this->userId)
+            ->entries()
+            ->update(['was_recently_imported' => 0]);
         foreach ($this->getFilteredArray() as $entry) {
-            $entryArray = $this->toEntryEntity($entry)->toArray();
-            $model = [
-                ...$entryArray,
-                'was_recently_imported' => 1,
-                'entry_import_bank_id' => $this->parserId,
-            ];
+            $entry = $this->toEntryEntity($entry);
+            foreach ($mutators as $mutator) {
+                $entry->mutate($mutator);
+            }
+            $entryArray = $entry->toModelArray();
+            $model = $entryArray + ['entry_import_bank_id' => $this->parserId];
             $entryArray['sum'] = $entryArray['sum'] * 100;
             Entry::firstOrCreate($entryArray, $model);
+        }
+        foreach ($mutators as $mutator) {
+            $mutator
+                ->getMutatorInstance()
+                ->clearAfterMutation();
         }
     }
 

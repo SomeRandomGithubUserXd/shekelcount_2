@@ -73,7 +73,7 @@ export default {
             this.category_id = category_id
         },
         deleteCategory() {
-            Inertia.delete(route('entries.categories.delete', this.category_id), {
+            Inertia.delete(route('entries.categories.destroy', this.category_id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     this.open = false

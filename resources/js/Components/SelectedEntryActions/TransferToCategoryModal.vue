@@ -68,7 +68,7 @@ import {Dialog, DialogOverlay, DialogTitle, TransitionChild, TransitionRoot} fro
 import {ExclamationIcon} from '@heroicons/vue/outline'
 import {Inertia} from "@inertiajs/inertia";
 import ValidationErrors from "@/Components/ValidationErrors";
-import CategorySelect from "@/Components/Categories/CategorySelect";
+import CategorySelect from "@/Components/Entries/Category/CategorySelect";
 
 export default {
     props: {

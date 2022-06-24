@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasManyThrough(Entry::class, Category::class);
     }
+
+    public function mutators()
+    {
+        return $this->hasMany(Mutator::class);
+    }
 }

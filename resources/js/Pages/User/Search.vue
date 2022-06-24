@@ -14,7 +14,7 @@
                 </h2>
             </div>
             <form class="flex flex-col" autocomplete="off"
-                  @submit.prevent="reloadData">
+                  @submit.prevent="reloadData(1)">
                 <div class="sm:flex sm:items-start">
                     <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
                         <div class="mt-5 flex flex-col">
@@ -94,14 +94,15 @@
             <div class="flex flex-col mt-5" id="entry_list">
                 <div class="flex mt-3 flex-col md:flex-row">
                     <h2 class="text-lg font-semibold flex">Entries Total: <span
-                        class="text-red-500 ml-auto md:ml-3">-{{ priceFormat($page.props.misc.entries_total) }}</span></h2>
+                        class="text-red-500 ml-auto md:ml-3">-{{ priceFormat($page.props.misc.entries_total) }}</span>
+                    </h2>
                     <div class="md:w-auto w-full flex items-center mt-3 mb-2 md:my-0 md:ml-auto">
                         <entry-actions
                             @transferToCategory="transferToCategory"
                             @deleteEntries="deleteEntries"
                             v-if="selectedEntries.length"
                             :entry-ids="selectedEntries"/>
-                        <div class="relative flex items-start ml-auto md:ml-0">
+                        <div v-if="$page.props.entries.data.length" class="relative flex items-start ml-auto md:ml-0">
                             <div class="flex items-center h-5">
                                 <input
                                     @change="selectAllEntries"
@@ -148,12 +149,12 @@
             ref="createModal"/>
         <entry-delete-modal ref="deleteModal"/>
         <transfer-to-category-modal
-            @transferred="resetFilter(false)"
+            @transferred="onEntryActionComplete"
             :user-categories="$page.props.categories"
             ref="transferModal"/>
         <delete-entries-modal
             ref="deleteManyModal"
-            @deleted="resetFilter(false)"
+            @deleted="onEntryActionComplete"
             :entry-ids="selectedEntries"/>
     </Authenticated>
 </template>
@@ -176,10 +177,13 @@ import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
 import collect from 'collect.js';
 import EntryActions from "@/Components/Entries/Entry/EntryActions";
-import CategorySelect from "@/Components/Categories/CategorySelect";
+import CategorySelect from "@/Components/Entries/Category/CategorySelect";
 import {union} from "underscore"
 import TransferToCategoryModal from "@/Components/SelectedEntryActions/TransferToCategoryModal";
 import DeleteEntriesModal from "@/Components/SelectedEntryActions/DeleteEntriesModal";
+import {toast} from "@/Traits/FiresToasts";
+import {getEntryForm, priceFormat} from "@/Traits/InteractsWithEntries";
+import {scrollTo} from "@/Traits/InteractsWithWindow";
 
 export default {
     components: {
@@ -243,7 +247,7 @@ export default {
         selectedEntries: {
             deep: true,
             handler() {
-                this.setAllEntriesSelected()
+                this.detectSelectedEntries()
             }
         }
     },
@@ -270,14 +274,12 @@ export default {
             }
             return {};
         },
-        priceFormat(number) {
-            return priceFormat(number);
-        },
+        priceFormat: priceFormat,
         resetFilter(scrollToTop = true) {
             this.selectedEntries = []
             Inertia.visit(route('search.index'), {
                 preserveScroll: true,
-                onFinish: () => !scrollToTop || this.scrollTo('top'),
+                onFinish: () => !scrollToTop || scrollTo('top'),
             })
         },
         editEntry(entry) {
@@ -292,7 +294,7 @@ export default {
         switchPage(page) {
             this.reloadData(page)
         },
-        reloadData(page = 1) {
+        reloadData(page = 1, conflictPrevented = false) {
             if (page.constructor !== Number) {
                 page = this.getUrlParams('page', 1)
             }
@@ -303,12 +305,19 @@ export default {
             this.selectWholePage = false
             Inertia.reload({
                 onFinish: () => {
-                    this.setAllEntriesSelected()
-                    this.scrollTo('entry_list')
+                    this.detectSelectedEntries()
+                    scrollTo('entry_list')
+                    if (!conflictPrevented) {
+                        const entriesMeta = this.$page.props.entries
+                        if (!entriesMeta.data.length && entriesMeta.current_page !== 1) {
+                            this.firePageSetToast(entriesMeta.last_page)
+                            return this.reloadData(entriesMeta.last_page, true)
+                        }
+                    }
                 },
             })
         },
-        setAllEntriesSelected() {
+        detectSelectedEntries() {
             const pageEntries = collect(this.$page.props.entries.data)
                 .pluck('id')
                 .items
@@ -318,9 +327,6 @@ export default {
             pageSelected
                 ? this.selectWholePage = true
                 : this.selectWholePage = false
-        },
-        scrollTo(id) {
-            scrollTo(document.querySelector(`#${id}`))
         },
         selectEntry(id) {
             this.selectedEntries.push(id)
@@ -352,6 +358,30 @@ export default {
         },
         deleteEntries() {
             this.$refs['deleteManyModal'].init(this.selectedEntries)
+        },
+        onEntryActionComplete() {
+            this.selectedEntries = []
+            const entriesMeta = this.$page.props.entries
+            if (!entriesMeta.total) {
+                this.fireFilterResetToast()
+                return this.resetFilter(false)
+            }
+            if (!entriesMeta.data.length && entriesMeta.current_page !== 1) {
+                this.firePageSetToast(entriesMeta.last_page)
+                return this.reloadData(entriesMeta.last_page, true)
+            }
+        },
+        fireFilterResetToast() {
+            this.$swal(toast({
+                icon: 'info',
+                title: 'Filter was force reset'
+            }))
+        },
+        firePageSetToast(page) {
+            this.$swal(toast({
+                icon: 'info',
+                title: 'Page was set to ' + page
+            }))
         }
     }
 }

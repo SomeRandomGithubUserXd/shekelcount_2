@@ -16,13 +16,10 @@ class EntriesBelongsToUserRule implements Rule
 
     public function passes($attribute, $value): bool
     {
-        foreach ($value as $entryId) {
-            if (!User::find($this->userId)
-                ->entries()
-                ->where(['entries.id' => $entryId])
-                ->exists())
-                return false;
-        }
+        if (!User::find($this->userId)
+            ->entries()
+            ->whereIn('entries.id', $value)
+            ->count()) return false;
         return true;
     }
 

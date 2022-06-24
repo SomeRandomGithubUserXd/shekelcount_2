@@ -9,8 +9,6 @@ class RecordBelongsToUserRule implements Rule
 {
     protected int $userId;
 
-    protected int $recordId;
-
     protected string $foreignKey;
 
     protected Model $model;

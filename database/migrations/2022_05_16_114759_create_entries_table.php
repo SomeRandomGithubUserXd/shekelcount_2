@@ -12,12 +12,16 @@ class CreateEntriesTable extends Migration
     {
         Schema::create('entries', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Category::class);
+            $table->foreignIdFor(Category::class)
+                ->constrained()
+                ->cascadeOnDelete();
             $table->dateTime('performed_at');
             $table->integer('sum');
             $table->text('description');
-            $table->boolean('was_recently_imported')->default(0);
-            $table->foreignIdFor(EntryImportBank::class)->nullable();
+            $table->boolean('was_recently_imported')
+                ->default(0);
+            $table->foreignIdFor(EntryImportBank::class)
+                ->nullable();
             $table->timestamps();
         });
     }

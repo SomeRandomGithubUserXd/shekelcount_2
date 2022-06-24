@@ -114,7 +114,7 @@ import Input from "@/Components/Input";
 import 'v-calendar/dist/style.css';
 import {DatePicker} from 'v-calendar';
 import ValidationErrors from "@/Components/ValidationErrors";
-import CategorySelect from "@/Components/Categories/CategorySelect";
+import CategorySelect from "@/Components/Entries/Category/CategorySelect";
 
 export default {
     components: {
@@ -175,7 +175,7 @@ export default {
             })
         },
         update() {
-            this.transformedForm.patch(route('entries.update'), {
+            this.transformedForm.patch(route('entries.update', this.form.entry_id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     this.open = false

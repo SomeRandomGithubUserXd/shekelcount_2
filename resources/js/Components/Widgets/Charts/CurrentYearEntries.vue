@@ -21,6 +21,7 @@ import {
     PointElement,
     LineElement
 } from 'chart.js'
+import {isMobile} from "@/Traits/InteractsWithWindow";
 
 ChartJS.register(
     Title,

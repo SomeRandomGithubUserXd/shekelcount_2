@@ -55,25 +55,20 @@
                                             type="file" id="formFile"
                                             :accept="'.' + importExtensions.join(',.')">
                                     </div>
-                                    <div class="mt-3" v-if="form.progress">
+                                    <div class="mt-3">
                                         <label>
-                                            Upload progress
+                                            Mutators (optional)
                                         </label>
-                                        <div class="w-full bg-gray-200 rounded-full dark:bg-gray-700">
-                                            <div
-                                                class="bg-blue-600 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full"
-                                                :style="{width: form.progress.percentage + '%'}">
-                                                {{ form.progress.percentage }}%
-                                            </div>
-                                        </div>
+                                        <mutator-select :mutators="userMutators" v-model="form.mutators"/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                             <button type="submit"
-                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                Import
+                                    class="w-full flex items-center inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                <animated-loader v-if="form.progress" class="w-4 h-4 mr-2"/>
+                                {{ form.progress ? 'Importing...' : 'Import' }}
                             </button>
                             <button type="button"
                                     class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
@@ -100,9 +95,14 @@ import "vue-select/dist/vue-select.css";
 import 'v-calendar/dist/style.css';
 import {DatePicker} from 'v-calendar';
 import ValidationErrors from "@/Components/ValidationErrors";
+import AnimatedLoader from "@/Components/AnimatedLoader";
+import MutatorSelect from "@/Components/Mutators/MutatorSelect";
+import {collect} from "collect.js";
 
 export default {
     components: {
+        MutatorSelect,
+        AnimatedLoader,
         ValidationErrors,
         Input,
         Button,
@@ -120,13 +120,15 @@ export default {
             open: false,
             form: useForm({
                 schema: '',
-                file: null
+                file: null,
+                mutators: []
             })
         }
     },
     props: {
         importExtensions: Array,
-        importOptions: Array
+        importOptions: Array,
+        userMutators: Array
     },
     methods: {
         init() {
@@ -135,7 +137,10 @@ export default {
         handleForm() {
             this.form.transform((data) => ({
                 ...data,
-                schema_id: data.schema.id
+                schema_id: data.schema?.id,
+                mutator_ids: data.mutators.length
+                    ? collect(data.mutators).pluck('id').items
+                    : null
             })).post(route('entries.import'), {
                 preserveScroll: true,
                 onSuccess: () => {
