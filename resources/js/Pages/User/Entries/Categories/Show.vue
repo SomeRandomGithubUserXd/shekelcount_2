@@ -66,6 +66,7 @@ import Pagination from "@/Components/Pagination";
 import {Inertia} from "@inertiajs/inertia";
 import {Tippy} from 'vue-tippy'
 import 'tippy.js/dist/tippy.css'
+import {getEntryForm} from "@/Traits/InteractsWithEntries";
 
 export default {
     components: {Pagination, EntryDeleteModal, EntryModal, EntryBlock, Authenticated, PencilIcon, Head, Tippy},
