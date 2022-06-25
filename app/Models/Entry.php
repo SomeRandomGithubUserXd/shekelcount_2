@@ -23,11 +23,6 @@ class Entry extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function getPerformedAtAttribute(string $performedAt): string
-    {
-        return $this->strToTimezone($performedAt, TimezoneConversionOption::UTCToMoscow);
-    }
-
     public function entryImportBank(): BelongsTo
     {
         return $this->belongsTo(EntryImportBank::class);
@@ -48,6 +43,17 @@ class Entry extends Model
         return new Attribute(
             get: fn($sum) => floatval($sum) / 100,
             set: fn($sum) => floatval($sum) * 100
+        );
+    }
+
+    protected function performedAt(): Attribute
+    {
+        return new Attribute(
+            get: fn($performedAt) => $this
+                ->strToTimezone($performedAt, TimezoneConversionOption::UTCToMoscow)
+                ->format('Y-m-d H:i:s'),
+            set: fn($performedAt) => $this
+                ->strToTimezone($performedAt, TimezoneConversionOption::MoscowToUTC)
         );
     }
 }

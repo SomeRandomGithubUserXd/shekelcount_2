@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\ImportEntries\AbstractEntryParser;
 use App\Services\ImportEntries\EntryEntity;
 use App\Traits\InteractsWithTime;
+use Carbon\Carbon;
 
 class TinkoffEntryParser extends AbstractEntryParser
 {
@@ -18,7 +19,7 @@ class TinkoffEntryParser extends AbstractEntryParser
             User::find($this->userId)->categories()->firstOrCreate([
                 'name' => $entry['Категория'] ?? "ДРУГИЕ ОПЕРАЦИИ"
             ]),
-            $this->strToTimezone($entry['Дата операции'], TimezoneConversionOption::MoscowToUTC),
+            new Carbon($entry['Дата операции']),
             -$entry['Сумма платежа'],
             $entry['Описание']
         );
