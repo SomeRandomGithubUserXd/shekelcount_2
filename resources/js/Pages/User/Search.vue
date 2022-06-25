@@ -68,6 +68,12 @@
                                 <textarea v-model="form.description" id="description"
                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"/>
                             </div>
+                            <div class="mt-3">
+                                <label for="group_by">
+                                    Group By Date (DateTimeInterface format)
+                                </label>
+                                <Input class="w-full" type="text" v-model="form.group_by" placeholder="Y-m-d"/>
+                            </div>
                             <div class="mt-3 flex flex-col">
                                 <label>
                                     Date Range
@@ -102,7 +108,7 @@
                             @deleteEntries="deleteEntries"
                             v-if="selectedEntries.length"
                             :entry-ids="selectedEntries"/>
-                        <div v-if="$page.props.entries.data.length" class="relative flex items-start ml-auto md:ml-0">
+                        <div v-if="entriesData.length" class="relative flex items-start ml-auto md:ml-0">
                             <div class="flex items-center h-5">
                                 <input
                                     @change="selectAllEntries"
@@ -119,12 +125,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="entry-list mt-3">
-                    <p v-if="!$page.props.entries.data.length">No entries</p>
+                <div v-if="!groupByIsActive"
+                     class="entry-list mt-3">
+                    <p v-if="!entriesData.length">No entries</p>
                     <div
                         class="min-h-50"
                         :key="key"
-                        v-for="(entry, key) in $page.props.entries.data">
+                        v-for="(entry, key) in entriesWithMeta.data">
                         <entry-block
                             :selectable="true"
                             :selected="checkIfEntrySelected(entry.id)"
@@ -137,12 +144,30 @@
                             :entry="entry"/>
                     </div>
                 </div>
+                <div v-else
+                     v-for="(entries, group) in entriesWithMeta.data"
+                     class="min-h-50">
+                    <div class="mt-5">
+                        <span class="text-2xl font-semibold">{{ group }}</span>
+                        <entry-block
+                            :selectable="true"
+                            v-for="entry in entries"
+                            :selected="checkIfEntrySelected(entry.id)"
+                            class="w-full h-full mt-5"
+                            @editEntry="editEntry"
+                            @deleteEntry="deleteEntry"
+                            @selectEntry="selectEntry"
+                            @unselectEntry="unselectEntry"
+                            :category="entry.category"
+                            :entry="entry"/>
+                    </div>
+                </div>
             </div>
             <pagination
-                v-if="$page.props.entries.data.length"
-                :current="$page.props.entries.current_page"
+                v-if="entriesWithMeta.total"
+                :current="entriesWithMeta.current_page"
                 @switch-page="switchPage"
-                :max="$page.props.entries.last_page"/>
+                :max="entriesWithMeta.last_page"/>
         </div>
         <entry-modal
             :user-categories="$page.props.categories"
@@ -222,6 +247,30 @@ export default {
                     : SortDescendingIcon
             }
         },
+        groupByIsActive: {
+            get() {
+                return !!this.entriesWithMeta?.is_grouped
+            }
+        },
+        entriesWithMeta: {
+            get() {
+                return this.$page.props.entries
+            }
+        },
+        entriesData: {
+            get() {
+                if (this.groupByIsActive) {
+                    const pageEntries = this.entriesWithMeta.data
+                    const entries = [];
+                    for (const group in pageEntries) {
+                        entries.push(...pageEntries[group])
+                    }
+                    return entries
+                } else {
+                    return this.entriesWithMeta.data
+                }
+            }
+        }
     },
     data() {
         return {
@@ -238,6 +287,7 @@ export default {
                     end: this.getUrlParams('date_range[end]', new Date)
                 },
                 category: this.getCategory(),
+                group_by: this.getUrlParams('group_by')
             },
             selectedEntries: [],
             selectWholePage: false
@@ -248,6 +298,12 @@ export default {
             deep: true,
             handler() {
                 this.detectSelectedEntries()
+            }
+        },
+        'page.props.entries': {
+            deep: true,
+            handler(val) {
+                console.log(val)
             }
         }
     },
@@ -308,8 +364,8 @@ export default {
                     this.detectSelectedEntries()
                     scrollTo('entry_list')
                     if (!conflictPrevented) {
-                        const entriesMeta = this.$page.props.entries
-                        if (!entriesMeta.data.length && entriesMeta.current_page !== 1) {
+                        const entriesMeta = this.entriesWithMeta
+                        if (!this.entriesData.length && entriesMeta.current_page !== 1) {
                             this.firePageSetToast(entriesMeta.last_page)
                             return this.reloadData(entriesMeta.last_page, true)
                         }
@@ -318,7 +374,7 @@ export default {
             })
         },
         detectSelectedEntries() {
-            const pageEntries = collect(this.$page.props.entries.data)
+            const pageEntries = collect(this.entriesData)
                 .pluck('id')
                 .items
             const pageSelected = pageEntries.every(element => {
@@ -342,7 +398,7 @@ export default {
         selectAllEntries(event) {
             const checked = event.target.checked
             let selectedEntries = this.selectedEntries
-            const entryIds = collect(this.$page.props.entries.data).pluck('id').items
+            const entryIds = collect(this.entriesData).pluck('id').items
             if (checked) {
                 selectedEntries = union(selectedEntries, entryIds)
             } else {
@@ -361,12 +417,12 @@ export default {
         },
         onEntryActionComplete() {
             this.selectedEntries = []
-            const entriesMeta = this.$page.props.entries
+            const entriesMeta = this.entriesWithMeta
             if (!entriesMeta.total) {
                 this.fireFilterResetToast()
                 return this.resetFilter(false)
             }
-            if (!entriesMeta.data.length && entriesMeta.current_page !== 1) {
+            if (!this.entriesData.length && entriesMeta.current_page !== 1) {
                 this.firePageSetToast(entriesMeta.last_page)
                 return this.reloadData(entriesMeta.last_page, true)
             }

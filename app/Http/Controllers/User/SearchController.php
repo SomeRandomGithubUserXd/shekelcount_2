@@ -6,6 +6,7 @@ use App\Enums\TimezoneConversionOption;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\SearchRequest;
 use App\Traits\InteractsWithTime;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
 class SearchController extends Controller
@@ -18,6 +19,8 @@ class SearchController extends Controller
         $dates = $request->get('date_range');
         $entriesQuery = auth()->user()
             ->entries()
+            ->orderByDesc('performed_at')
+            ->with(['entryImportBank', 'category'])
             ->when($request->get('category_id'),
                 fn(Builder $query) => $query->where(['category_id' => $request->get('category_id')])
             )
@@ -47,12 +50,24 @@ class SearchController extends Controller
             })
             ->when(isset($orderBy['column']),
                 fn(Builder $query) => $query->orderBy($orderBy['column'], $orderBy['direction'])
-            )
-            ->with(['entryImportBank', 'category'])
-            ->orderByDesc('performed_at');
+            );
         $miscQuery = clone $entriesQuery;
+        $entries = $entriesQuery->paginate(12);
+        if ($request->get('group_by')) {
+            $entries = [
+                'is_grouped' => true,
+                'total' => $entries->total(),
+                'last_page' => $entries->lastPage(),
+                'current_page' => $entries->currentPage(),
+                'data' => $entries->groupBy(
+                    fn($entry) => (new Carbon($entry->performed_at))->format($request->get('group_by'))
+                )->sortBy(function ($entry, $key) {
+                    return (int)date('N', strtotime($key));
+                }),
+            ];
+        }
         return inertia('User/Search', [
-            'entries' => $entriesQuery->paginate(12),
+            'entries' => $entries,
             'categories' => auth()->user()->categories,
             'misc' => [
                 'entries_total' => $miscQuery->sum('sum') / 100
