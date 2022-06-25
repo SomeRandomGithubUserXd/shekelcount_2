@@ -151,41 +151,36 @@ export default {
                     name: 'Dashboard',
                     href: route('dashboard'),
                     icon: HomeIcon,
-                    current: this.routeIsCurrent(route('dashboard'))
+                    current: route().current('dashboard')
                 },
                 {
                     name: 'Entries',
                     href: route('entries.index'),
                     icon: AnnotationIcon,
-                    current: this.routeIsCurrent(route('entries.index'))
+                    current: route().current('entries.*')
                 },
                 {
                     name: 'Mutators',
                     href: route('mutators.index'),
                     icon: SwitchHorizontalIcon,
-                    current: this.routeIsCurrent(route('mutators.index'))
+                    current: route().current('mutators.*')
                 },
                 {
                     name: 'Search',
                     href: route('search.index'),
                     icon: SearchIcon,
-                    current: this.routeIsCurrent(route('search.index'))
+                    current: route().current('search.*')
                 },
             ]
         }
     },
     setup() {
         const sidebarOpen = ref(false)
-
         return {
             sidebarOpen,
         }
     },
     methods: {
-        routeIsCurrent(route) {
-            const current = location.origin + location.pathname;
-            return current.includes(route);
-        },
         logout() {
             Inertia.post(route('logout'))
         }

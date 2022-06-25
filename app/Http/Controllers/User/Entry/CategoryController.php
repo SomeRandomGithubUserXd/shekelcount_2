@@ -6,19 +6,27 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\Entry\Category\CategoryRequest;
 use App\Http\Requests\User\Entry\Category\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Traits\HasPagination;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function show(Category $category)
+    use HasPagination;
+
+    public function show(Category $category, Request $request)
     {
         abort_if($category->user_id !== auth()->id(), 403);
-        return inertia('User/Entries/Categories/Show', [
-            "entries" => $category
-                ->entries()
-                ->with(['entryImportBank', 'category'])
-                ->orderByDesc('performed_at')
-                ->paginate(12),
+        $entries = $category
+            ->entries()
+            ->with(['entryImportBank', 'category'])
+            ->orderByDesc('performed_at')
+            ->paginate(12);
+        return $this->preventEmptyPage(
+            $entries,
+            $request->route(),
+            ['category' => $category]
+        ) ?: inertia('User/Entries/Categories/Show', [
+            "entries" => $entries,
             "category" => $category,
             "categories" => auth()->user()->categories
         ]);

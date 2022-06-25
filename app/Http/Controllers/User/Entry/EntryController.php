@@ -11,13 +11,14 @@ use App\Models\Entry;
 use App\Models\Service\EntryImportBank;
 use App\Services\ImportEntries\AbstractEntryParser;
 use App\Traits\CRUDsEntries;
+use App\Traits\HasPagination;
 use Illuminate\Http\Request;
 
 class EntryController extends Controller
 {
-    use CRUDsEntries;
+    use CRUDsEntries, HasPagination;
 
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $categories = $user
@@ -29,7 +30,10 @@ class EntryController extends Controller
             ])
             ->orderBy('entries_sum', 'DESC')
             ->paginate(5);
-        return inertia('User/Entries/Index', [
+        return $this->preventEmptyPage(
+            $categories,
+            $request->route()
+        ) ?: inertia('User/Entries/Index', [
             'categories' => $categories,
             'icons' => config('icons.data'),
             'import' => AbstractEntryParser::getImportMeta(),

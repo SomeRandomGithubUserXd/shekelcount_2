@@ -72,7 +72,7 @@ export default {
     components: {Pagination, EntryDeleteModal, EntryModal, EntryBlock, Authenticated, PencilIcon, Head, Tippy},
     mounted() {
         const params = new URLSearchParams(location.search);
-        if(params.has('write_entry')) {
+        if (params.has('write_entry')) {
             this.createEntry()
         }
     },
