@@ -19,7 +19,6 @@ class SearchController extends Controller
         $dates = $request->get('date_range');
         $entriesQuery = auth()->user()
             ->entries()
-            ->orderByDesc('performed_at')
             ->with(['entryImportBank', 'category'])
             ->when($request->get('category_id'),
                 fn(Builder $query) => $query->where(['category_id' => $request->get('category_id')])
@@ -50,20 +49,35 @@ class SearchController extends Controller
             })
             ->when(isset($orderBy['column']),
                 fn(Builder $query) => $query->orderBy($orderBy['column'], $orderBy['direction'])
+            )
+            ->when(!isset($orderBy['column']),
+                fn(Builder $query) => $query->orderByDesc('performed_at')
             );
         $miscQuery = clone $entriesQuery;
         $entries = $entriesQuery->paginate(12);
         if ($request->get('group_by')) {
+            $grouped = $entries->groupBy(
+                fn($entry) => (new Carbon($entry->performed_at))->format($request->get('group_by'))
+            )->sortBy(function ($entry, $key) use ($orderBy) {
+                $position = (int)date('N', strtotime($key));
+                if ($orderBy['column'] = 'performed_at' && $orderBy['direction'] === 'DESC') {
+                    return -$position;
+                }
+                return $position;
+            });
+            if (isset($orderBy['column'])) {
+                foreach ($grouped as $key => $group) {
+                    $orderBy['direction'] === 'ASC'
+                        ? $grouped[$key] = $group->sortBy($orderBy['column'])->values()
+                        : $grouped[$key] = $group->sortByDesc($orderBy['column'])->values();
+                }
+            }
             $entries = [
                 'is_grouped' => true,
                 'total' => $entries->total(),
                 'last_page' => $entries->lastPage(),
                 'current_page' => $entries->currentPage(),
-                'data' => $entries->groupBy(
-                    fn($entry) => (new Carbon($entry->performed_at))->format($request->get('group_by'))
-                )->sortBy(function ($entry, $key) {
-                    return (int)date('N', strtotime($key));
-                }),
+                'data' => $grouped,
             ];
         }
         return inertia('User/Search', [

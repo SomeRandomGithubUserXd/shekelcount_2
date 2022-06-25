@@ -263,9 +263,9 @@ export default {
                     const pageEntries = this.entriesWithMeta.data
                     const entries = [];
                     for (const group in pageEntries) {
-                        entries.push(...pageEntries[group])
+                        entries.push(pageEntries[group])
                     }
-                    return entries
+                    return []
                 } else {
                     return this.entriesWithMeta.data
                 }
